@@ -3,12 +3,12 @@ package etcd
 import (
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
 	"os"
+	"encoding/json"
+	"strconv"
 
 	etcd2 "github.com/coreos/go-etcd/etcd"
 	"github.com/gliderlabs/registrator/bridge"
@@ -100,15 +100,28 @@ func (r *EtcdAdapter) syncEtcdCluster() {
 func (r *EtcdAdapter) Register(service *bridge.Service) error {
 	r.syncEtcdCluster()
 
-	path := r.path + "/" + service.Name + "/" + service.ID
-	port := strconv.Itoa(service.Port)
-	addr := net.JoinHostPort(service.IP, port)
-
 	var err error
+	path := r.path + "/" + service.Name + "/" + service.ID
+  tags,err  := json.Marshal(service.Tags)
+  if err != nil {log.Println("etcd: faild to marshal tags:", err)}
+  attrs,err := json.Marshal(service.Attrs)
+  if err != nil {log.Println("etcd: faild to marshal attrs:", err)}
+  entry := map[string]string {
+    "ID": service.ID,
+    "Name": service.Name,
+    "Port": strconv.Itoa(service.Port),
+    "IP": service.IP,
+    "Tags": string(tags[:]),
+    "Attrs": string(attrs[:]),
+  }
+  bytes, err := json.Marshal(entry)
+  if err != nil {log.Println("etcd: faild to marshal service:", err)}
+
+  value := string(bytes[:])
 	if r.client != nil {
-		_, err = r.client.Set(path, addr, uint64(service.TTL))
+		_, err = r.client.Set(path, value, uint64(service.TTL))
 	} else {
-		_, err = r.client2.Set(path, addr, uint64(service.TTL))
+		_, err = r.client2.Set(path, value, uint64(service.TTL))
 	}
 
 	if err != nil {

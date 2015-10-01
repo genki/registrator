@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"os"
 	"encoding/json"
-	"strconv"
+	"fmt"
 
 	etcd2 "github.com/coreos/go-etcd/etcd"
 	"github.com/gliderlabs/registrator/bridge"
@@ -106,18 +106,13 @@ func (r *EtcdAdapter) Register(service *bridge.Service) error {
   if err != nil {log.Println("etcd: faild to marshal tags:", err)}
   attrs,err := json.Marshal(service.Attrs)
   if err != nil {log.Println("etcd: faild to marshal attrs:", err)}
-  entry := map[string]string {
-    "ID": service.ID,
-    "Name": service.Name,
-    "Port": strconv.Itoa(service.Port),
-    "IP": service.IP,
-    "Tags": string(tags[:]),
-    "Attrs": string(attrs[:]),
-  }
-  bytes, err := json.Marshal(entry)
-  if err != nil {log.Println("etcd: faild to marshal service:", err)}
 
-  value := string(bytes[:])
+  value := fmt.Sprintf(
+    "{\"ID\":\"%s\",\"Name\":\"%s\",\"Port\":%d,\"IP\":\"%s\"," +
+    "\"Tags\":%s,\"Attrs\":%s}",
+    service.ID, service.Name, service.Port, service.IP,
+    string(tags[:]), string(attrs[:]))
+
 	if r.client != nil {
 		_, err = r.client.Set(path, value, uint64(service.TTL))
 	} else {

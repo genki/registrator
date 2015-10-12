@@ -5,6 +5,8 @@ This is a modified version of original Registrator that has
  * "etcds://" backend that uses ssl
  * JSON retistration (same to consul backend) instead of "IP:Port"
 
+ [also on docker hub](https://hub.docker.com/r/s21g/registrator/)
+
 ---
 
 Service registry bridge for Docker, sponsored by [Weave](http://weave.works).
